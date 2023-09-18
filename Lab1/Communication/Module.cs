@@ -15,23 +15,15 @@ public static class Communicator
 {
 	public static void DumpToPipe(PipeStream stream, Payload data)
 	{
-		unsafe
-		{
-			var array = new Payload[1];
-			array[0] = data;
-			var bytesSpan = MemoryMarshal.AsBytes(new Span<Payload>(array));
-			stream.Write(bytesSpan);
-		}
-		Console.WriteLine($"Sent: {data}");
+		byte[] array = new byte[Unsafe.SizeOf<Payload>()];
+		MemoryMarshal.Write(array, ref data);
+		stream.Write(array);
 	}
 
 	public static Payload ReceiveAnswer(PipeStream stream)
 	{
-		var data = new Payload[1];
-		data[0] = new Payload();
-		var span = MemoryMarshal.AsBytes(new Span<Payload>(data));
-		stream.ReadExactly(span);
-
-		return data[0];
+		byte[] array = new byte[Unsafe.SizeOf<Payload>()];
+		_ = stream.Read(array,0,array.Length);
+		return MemoryMarshal.Read<Payload>(array);
 	}
 }
