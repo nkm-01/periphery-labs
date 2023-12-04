@@ -10,6 +10,7 @@ Barometer baro;
 
 void setup () {
     WiFi.begin("ASOIU", "kaf.asoiu.48");
+    Serial.print("Connecting...\n");
     auto res = WiFi.waitForConnectResult();
 
     if (res == WL_CONNECTED) {
@@ -23,6 +24,7 @@ void setup () {
 
     sensor.begin();
     baro.begin();
+    server.begin();
 }
 
 void loop() {
@@ -32,8 +34,9 @@ void loop() {
     String pressure;
     String altitude;
 
-    client = server.accept();
+    client = server.available();
     if (client) {
+        Serial.print("some client\n");
         auto state = sensor.read();
         switch (state) {
             case SHT_OK:
@@ -46,12 +49,12 @@ void loop() {
             break;
         }
 
-        baro_temp = String(baro . readTemperatureC());
+        baro_temp = String(baro.readTemperatureC());
         pressure = String(baro.readPressureMillimetersHg());
         altitude = String(baro.readAltitude());
 
         client.write("HTTP/1.0 200 OK\n", 16);
-        client.write("Content-Type: text/html\n\n", 24);
+        client.write("Content-Type: text/html\n\n", 25);
 
         client.write("<html><body><h2>SHT31</h2><p>Temp: ", 35);
         client.write(meteo_temp.c_str(), meteo_temp.length());
