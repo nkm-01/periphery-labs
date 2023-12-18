@@ -5,7 +5,7 @@ using Raven.Iot.Device.GpioExpander;
 using UnitsNet;
 using UnitsNet.Units;
 
-const int keyPin = 9;
+const int keyPin = 0;
 var pinA = DeviceHelper.WiringPiToBcm(0);
 var pinB = DeviceHelper.WiringPiToBcm(1);
 
@@ -20,7 +20,7 @@ if (DeviceHelper.GetGpioExpanderDevices() is [var settings])
     expander.SetPwmFrequency(Frequency.FromKilohertz(25));
     encoder.ValueChanged += (_, args) =>
     {
-        expander.AnalogWrite(keyPin, Convert.ToInt32(args.Value));
+        expander.AnalogWrite(keyPin, (int)args.Value);
         Console.WriteLine($"Speed: {args.Value / 2.55}%");
     };
 }
