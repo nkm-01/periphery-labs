@@ -1,15 +1,9 @@
-﻿using System.Device.Gpio;
-using Iot.Device.RotaryEncoder;
-using OfficeOpenXml.Core.ExcelPackage;
+﻿using System.Globalization;
+using CsvHelper;
+using Iot.Device.Adc;
 using Raven.Iot.Device;
-using Raven.Iot.Device.GpioExpander;
 using Raven.Iot.Device.Ina219;
 using UnitsNet;
-using UnitsNet.Units;
-
-
-var pinA = DeviceHelper.BcmToWiringPi(0);
-var pinB = DeviceHelper.BcmToWiringPi(1);
 
 if (DeviceHelper.GetIna219Devices() is [var settings])
 {
@@ -20,6 +14,39 @@ if (DeviceHelper.GetIna219Devices() is [var settings])
     };
 
     var ina219 = calibrator.CreateCalibratedDevice(settings);
-    var package = new ExcelPackage();
 
+    await using var writer = new StreamWriter("measure.csv");
+    await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+    await csv.WriteRecordsAsync(GetMeasurements(ina219));
+}
+
+return;
+
+
+async IAsyncEnumerable<Measurements> GetMeasurements(Ina219 device)
+{
+    foreach (var decaseconds in Enumerable.Range(0, 6))
+    {
+        var i = device.ReadCurrent().Amperes;
+        var p = device.ReadPower().Watts;
+        var v = (double)p / i;
+
+        yield return new Measurements
+        {
+            CurrentAmperes = i,
+            PowerWatts = (double)p,
+            VoltageVolts = v,
+            TimestampSeconds = decaseconds,
+        };
+
+        await Task.Delay(10000);
+    }
+}
+
+internal struct Measurements
+{
+    public int TimestampSeconds;
+    public double PowerWatts;
+    public double CurrentAmperes;
+    public double VoltageVolts;
 }
